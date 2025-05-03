@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hear My Voice</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind = {
+        config: {
+          theme: {
+            extend: {
+              fontFamily: {
+                "press-start": ['"Press Start 2P"', "cursive"],
+                inter: ["Inter", "sans-serif"],
+              },
+              colors: {
+                pink: "#ffc0cb",
+                white: "#ffffff",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Press Start 2P", cursive;
+        background-image: url(https://i.pinimg.com/736x/0b/6d/83/0b6d83022b5326ca71c715e7c1743dfb.jpg);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #overlay {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 1);
+        transition: background-color 3s ease-in-out;
+        z-index: 1;
+      }
+
+      .title {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 2rem;
+        text-shadow: 0 4px 0 black, 0 6px 0 black;
+        white-space: nowrap;
+        opacity: 0;
+        z-index: 2;
+      }
+
+      .title.animated {
+        animation: titleIn 2.5s forwards, titleUp 2.5s 2.5s forwards;
+      }
+
+      @keyframes titleIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes titleUp {
+        from {
+          top: 50%;
+          transform: translate(-50%, -50%);
+        }
+        to {
+          top: 5%;
+          transform: translate(-50%, 0);
+        }
+      }
+
+      .dialogue-box {
+        position: absolute;
+        bottom: 10%;
+        left: 10%;
+        width: 80%;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+        font-family: "Inter", sans-serif;
+        font-size: 1rem;
+        color: #111;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        max-height: 40vh;
+        overflow: hidden;
+      }
+
+      .chat-log {
+        overflow-y: auto;
+        max-height: 60%;
+        margin-bottom: 0.5rem;
+      }
+
+      .dialogue-entry {
+        margin-bottom: 12px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .typing-indicator {
+        font-style: italic;
+        color: #999;
+        margin-bottom: 12px;
+      }
+
+      .bottom-ui {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: auto;
+        z-index: 3; /* Ensure buttons are above the chat */
+      }
+
+      .tap-hint {
+        font-size: 0.9rem;
+        color: #555;
+        display: none;
+        align-items: center;
+        gap: 0.3rem;
+        font-weight: 500;
+        animation: blink 1.5s ease-in-out infinite;
+      }
+
+      .tap-arrow {
+        display: inline-block;
+        animation: nudge 1s ease-in-out infinite;
+      }
+
+      @keyframes nudge {
+        0% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(6px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      #question {
+        font-size: 1.4rem;
+        font-weight: 500;
+        color: #ff61a6;
+        text-align: center;
+        font-family: "Inter", sans-serif;
+        display: none;
+      }
+
+      .button-group {
+        display: none;
+        gap: 1rem;
+        justify-content: center;
+      }
+
+      .choice-btn {
+        padding: 10px 20px;
+        font-weight: bold;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: 0.3s ease;
+        font-size: 1.1rem;
+        text-transform: capitalize;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        z-index: 3; /* Ensures buttons stay above the chat content */
+      }
+
+      .yes-btn {
+        background-color: #ff61a6;
+        color: white;
+        border: 2px solid #ff61a6;
+      }
+
+      .no-btn {
+        background-color: #f7a4b7;
+        color: white;
+        border: 2px solid #f7a4b7;
+      }
+
+      .choice-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .choice-btn:focus {
+        outline: none;
+        box-shadow: 0 0 5px 2px rgba(255, 105, 180, 0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay"></div>
+    <div class="title" id="title">An Unheard Confession</div>
+    <div class="dialogue-box" id="dialogueBox">
+      <div class="chat-log" id="dialogueContent"></div>
+
+      <div class="bottom-ui">
+        <div class="tap-hint" id="tapHint">
+          tekan untuk lanjutkan <span class="tap-arrow">➜</span>
+        </div>
+        <div id="question">apa jawabanmu? ☺️</div>
+        <div class="button-group" id="buttonGroup">
+          <button class="choice-btn yes-btn" onclick="handleResponse('y')">
+            Iya
+          </button>
+          <button class="choice-btn no-btn" onclick="handleResponse('n')">
+            Tidak
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const overlay = document.getElementById("overlay");
+      const title = document.getElementById("title");
+      const dialogueBox = document.getElementById("dialogueBox");
+      const dialogueContent = document.getElementById("dialogueContent");
+      const question = document.getElementById("question");
+      const buttonGroup = document.getElementById("buttonGroup");
+      const tapHint = document.getElementById("tapHint");
+
+      let refusalCount = 0;
+
+      function delay(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function autoScrollChat() {
+        dialogueContent.scrollTop = dialogueContent.scrollHeight;
+      }
+
+      async function showTypingAnimation(length) {
+        const typing = document.createElement("div");
+        typing.className = "typing-indicator";
+        typing.textContent = ".";
+        dialogueContent.appendChild(typing);
+        dialogueBox.style.display = "flex";
+        autoScrollChat();
+
+        let dots = 1;
+        const duration = Math.max(1000, length * 20); // Increased speed here
+        const interval = setInterval(() => {
+          typing.textContent = ".".repeat((dots++ % 3) + 1);
+        }, 400);
+
+        await delay(duration);
+        clearInterval(interval);
+        typing.remove();
+      }
+
+      async function appendDialogue(text, speed = 40) {
+        await showTypingAnimation(text.length);
+        const entry = document.createElement("div");
+        entry.className = "dialogue-entry";
+        dialogueContent.appendChild(entry);
+        dialogueBox.style.display = "flex";
+        for (let i = 0; i < text.length; i++) {
+          entry.textContent += text[i];
+          autoScrollChat();
+          await delay(speed);
+        }
+      }
+
+      async function startDialogue() {
+        // Initially hide the dialogue box
+        dialogueBox.style.display = "none"; // Add this line
+
+        await showTitleAndFade();
+        await delay(1500);
+
+        // Show the dialogue box when the first message is appended
+        dialogueBox.style.display = "flex"; // This line makes the chatbox appear
+        await appendDialogue("Haii, vanilla!!\n", 80);
+        await delay(500);
+        await appendDialogue(
+          "boleh aku minta waktunya sebentar untuk bermain?\n",
+          30
+        );
+        await delay(300);
+
+        // Delay question display until dialogue is finished
+        await delay(500);
+        showQuestion();
+      }
+
+      function showQuestion(forceOneButton = false) {
+        question.style.display = "block";
+        buttonGroup.style.display = "flex";
+
+        const yesBtn = buttonGroup.querySelector(".yes-btn");
+        const noBtn = buttonGroup.querySelector(".no-btn");
+
+        if (refusalCount >= 3 || forceOneButton) {
+          noBtn.style.display = "none";
+        } else {
+          noBtn.style.display = "inline-block";
+        }
+
+        yesBtn.style.display = "inline-block";
+      }
+
+      async function typeWriterEffect() {
+        const text = title.textContent;
+        title.textContent = "";
+        for (let i = 0; i < text.length; i++) {
+          title.textContent += text.charAt(i);
+          await delay(60); // Increased speed here
+        }
+      }
+
+      async function showTitleAndFade() {
+        title.classList.add("animated");
+        await typeWriterEffect();
+        await delay(1000);
+        overlay.style.backgroundColor = "rgba(0,0,0,0.3)";
+        await delay(2000);
+      }
+
+      async function handleResponse(choice) {
+        question.style.display = "none";
+        buttonGroup.style.display = "none";
+        tapHint.style.display = "none";
+        await appendUserResponse(choice);
+
+        if (choice === "y") {
+          await appendMultiDialogue([
+            "baik! terima kasih!\n",
+            "aku janji kamu nggak bakal nyesel kok 💕",
+          ]);
+        } else {
+          if (refusalCount === 0) {
+            await appendMultiDialogue([
+              "eh apa kamu yakin?",
+              "setidaknya ini akan menyenangkan lohh! 🥺",
+            ]);
+          } else if (refusalCount === 1) {
+            await appendMultiDialogue([
+              "masi belum mau juga? 😢",
+              "aku udah nyiapin semuanya loh..",
+            ]);
+          } else if (refusalCount === 2) {
+            await appendMultiDialogue([
+              "kamu jahat 😭",
+              "tapi aku masih pengen kamu ikut...",
+            ]);
+          } else {
+            await appendDialogue("😔 yaudah deh, terakhir...");
+            showQuestion(true);
+            return;
+          }
+          refusalCount++;
+        }
+
+        showQuestion();
+      }
+
+      async function appendUserResponse(choice) {
+        const text = choice === "y" ? "Iya" : "Tidak";
+        const entry = document.createElement("div");
+        entry.className = "dialogue-entry";
+        entry.textContent = `kamu : ${text}`;
+        dialogueContent.appendChild(entry);
+        autoScrollChat();
+        await delay(400);
+      }
+
+      async function appendMultiDialogue(dialogues) {
+        for (let i = 0; i < dialogues.length; i++) {
+          tapHint.style.display = i < dialogues.length - 1 ? "flex" : "none";
+          await appendDialogue(dialogues[i]);
+          if (i < dialogues.length - 1) {
+            await waitForClickToContinue();
+          }
+        }
+        tapHint.style.display = "none";
+      }
+
+      function waitForClickToContinue() {
+        return new Promise((resolve) => {
+          const listener = () => {
+            document.removeEventListener("click", listener);
+            resolve();
+          };
+          document.addEventListener("click", listener);
+        });
+      }
+
+      window.onload = startDialogue;
+    </script>
+  </body>
+</html>
