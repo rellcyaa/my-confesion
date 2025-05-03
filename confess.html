@@ -23,8 +23,7 @@
               },
             },
           },
-        },
-      };
+        };
     </script>
     <style>
       body {
@@ -86,15 +85,10 @@
         bottom: 10%;
         left: 10%;
         width: 80%;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 12px;
+        background-color: transparent;
         padding: 20px;
-        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
-        font-family: "Inter", sans-serif;
-        font-size: 1rem;
-        color: #111;
         z-index: 2;
-        display: flex;
+        display: none;
         flex-direction: column;
         justify-content: space-between;
         max-height: 40vh;
@@ -109,14 +103,36 @@
 
       .dialogue-entry {
         margin-bottom: 12px;
+        padding: 12px;
+        background-color: rgba(255, 255, 255, 0.85);
+        border-radius: 16px;
+        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
         white-space: pre-wrap;
         word-wrap: break-word;
+        font-family: "Inter", sans-serif;
+        font-size: 1rem;
+        color: #111;
+      }
+
+      .username {
+        font-family: "Press Start 2P", cursive;
+        font-size: 0.7rem;
+        margin-right: 6px;
+      }
+
+      .username.rellcyaa {
+        color: #3b82f6;
+      }
+
+      .username.vanilla {
+        color: #ff69b4;
       }
 
       .typing-indicator {
+        display: inline-block;
         font-style: italic;
         color: #999;
-        margin-bottom: 12px;
+        margin-left: 8px;
       }
 
       .bottom-ui {
@@ -125,33 +141,38 @@
         align-items: center;
         gap: 0.5rem;
         margin-top: auto;
-        z-index: 3; /* Ensure buttons are above the chat */
+        z-index: 3;
       }
 
       .tap-hint {
-        font-size: 0.9rem;
-        color: #555;
+        font-size: 0.8rem;
+        font-family: "Press Start 2P", cursive;
+        color: #d63384;
         display: none;
         align-items: center;
-        gap: 0.3rem;
-        font-weight: 500;
+        gap: 0.5rem;
         animation: blink 1.5s ease-in-out infinite;
+        background-color: rgba(255, 255, 255, 0.6);
+        padding: 6px 10px;
+        border-radius: 12px;
       }
 
       .tap-arrow {
         display: inline-block;
-        animation: nudge 1s ease-in-out infinite;
+        font-size: 1rem;
+        color: #ff69b4;
+        animation: heartNudge 1s ease-in-out infinite;
       }
 
-      @keyframes nudge {
+      @keyframes heartNudge {
         0% {
-          transform: translateX(0);
+          transform: scale(1) translateX(0);
         }
         50% {
-          transform: translateX(6px);
+          transform: scale(1.1) translateX(4px);
         }
         100% {
-          transform: translateX(0);
+          transform: scale(1) translateX(0);
         }
       }
 
@@ -192,7 +213,7 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         font-family: "Inter", sans-serif;
         font-weight: 600;
-        z-index: 3; /* Ensures buttons stay above the chat content */
+        z-index: 3;
       }
 
       .yes-btn {
@@ -219,6 +240,8 @@
     </style>
   </head>
   <body>
+    <!-- rest of the document stays unchanged -->
+
     <div id="overlay"></div>
     <div class="title" id="title">An Unheard Confession</div>
     <div class="dialogue-box" id="dialogueBox">
@@ -226,7 +249,7 @@
 
       <div class="bottom-ui">
         <div class="tap-hint" id="tapHint">
-          tekan untuk lanjutkan <span class="tap-arrow">➜</span>
+          tekan untuk lanjutkan <span class="tap-arrow">❤</span>
         </div>
         <div id="question">apa jawabanmu? ☺️</div>
         <div class="button-group" id="buttonGroup">
@@ -264,11 +287,10 @@
         typing.className = "typing-indicator";
         typing.textContent = ".";
         dialogueContent.appendChild(typing);
-        dialogueBox.style.display = "flex";
         autoScrollChat();
 
         let dots = 1;
-        const duration = Math.max(1000, length * 20); // Increased speed here
+        const duration = Math.max(1000, length * 20);
         const interval = setInterval(() => {
           typing.textContent = ".".repeat((dots++ % 3) + 1);
         }, 400);
@@ -278,38 +300,65 @@
         typing.remove();
       }
 
-      async function appendDialogue(text, speed = 40) {
-        await showTypingAnimation(text.length);
+      async function appendDialogue(text, speaker = "rellcyaa") {
         const entry = document.createElement("div");
         entry.className = "dialogue-entry";
+
+        const username = document.createElement("span");
+        username.className = `username ${speaker}`;
+        username.textContent =
+          speaker === "rellcyaa" ? "Rellcyaa: " : "Vanilla: ";
+
+        entry.appendChild(username);
         dialogueContent.appendChild(entry);
-        dialogueBox.style.display = "flex";
+        autoScrollChat();
+
+        await delay(300);
+        await showTypingDots(); // Show typing dots first
+        await typewriterEffect(entry, text); // Apply typewriter effect after dots
+      }
+
+      async function showTypingDots() {
+        const typingDots = document.createElement("div");
+        typingDots.className = "typing-indicator";
+        typingDots.textContent = ".";
+        dialogueContent.appendChild(typingDots);
+        autoScrollChat();
+
+        let dots = 1;
+        const interval = setInterval(() => {
+          typingDots.textContent = ".".repeat((dots++ % 3) + 1);
+        }, 400);
+
+        // Show typing dots for a specific duration
+        await delay(1500);
+
+        clearInterval(interval);
+        typingDots.remove(); // Remove the typing dots after the delay
+      }
+
+      async function typewriterEffect(entry, text) {
+        const messageSpan = document.createElement("span");
+        entry.appendChild(messageSpan);
+        messageSpan.textContent = ""; // Clear text for animation
+
         for (let i = 0; i < text.length; i++) {
-          entry.textContent += text[i];
-          autoScrollChat();
-          await delay(speed);
+          messageSpan.textContent += text.charAt(i);
+          await delay(100); // Adjust typing speed here
         }
       }
 
       async function startDialogue() {
-        // Initially hide the dialogue box
-        dialogueBox.style.display = "none"; // Add this line
-
         await showTitleAndFade();
         await delay(1500);
 
-        // Show the dialogue box when the first message is appended
-        dialogueBox.style.display = "flex"; // This line makes the chatbox appear
-        await appendDialogue("Haii, vanilla!!\n", 80);
+        await appendDialogue("Haii, vanilla!!");
         await delay(500);
         await appendDialogue(
-          "boleh aku minta waktunya sebentar untuk bermain?\n",
-          30
+          "boleh aku minta waktunya sebentar untuk bermain?"
         );
         await delay(300);
 
-        // Delay question display until dialogue is finished
-        await delay(500);
         showQuestion();
       }
 
@@ -320,89 +369,54 @@
         const yesBtn = buttonGroup.querySelector(".yes-btn");
         const noBtn = buttonGroup.querySelector(".no-btn");
 
-        if (refusalCount >= 3 || forceOneButton) {
-          noBtn.style.display = "none";
-        } else {
-          noBtn.style.display = "inline-block";
-        }
-
+        noBtn.style.display =
+          forceOneButton || refusalCount >= 3 ? "none" : "inline-block";
         yesBtn.style.display = "inline-block";
-      }
-
-      async function typeWriterEffect() {
-        const text = title.textContent;
-        title.textContent = "";
-        for (let i = 0; i < text.length; i++) {
-          title.textContent += text.charAt(i);
-          await delay(60); // Increased speed here
-        }
-      }
-
-      async function showTitleAndFade() {
-        title.classList.add("animated");
-        await typeWriterEffect();
-        await delay(1000);
-        overlay.style.backgroundColor = "rgba(0,0,0,0.3)";
-        await delay(2000);
       }
 
       async function handleResponse(choice) {
         question.style.display = "none";
         buttonGroup.style.display = "none";
         tapHint.style.display = "none";
-        await appendUserResponse(choice);
+
+        const userText = choice === "y" ? "Iya" : "Tidak";
+        await appendDialogue(userText, "vanilla");
 
         if (choice === "y") {
           await appendMultiDialogue([
-            "baik! terima kasih!\n",
+            "baik! terima kasih!",
             "aku janji kamu nggak bakal nyesel kok 💕",
           ]);
         } else {
-          if (refusalCount === 0) {
-            await appendMultiDialogue([
-              "eh apa kamu yakin?",
-              "setidaknya ini akan menyenangkan lohh! 🥺",
-            ]);
-          } else if (refusalCount === 1) {
-            await appendMultiDialogue([
-              "masi belum mau juga? 😢",
-              "aku udah nyiapin semuanya loh..",
-            ]);
-          } else if (refusalCount === 2) {
-            await appendMultiDialogue([
-              "kamu jahat 😭",
-              "tapi aku masih pengen kamu ikut...",
-            ]);
+          const responses = [
+            ["eh apa kamu yakin?", "setidaknya ini akan menyenangkan lohh! 🥺"],
+            ["masi belum mau juga? 😢", "aku udah nyiapin semuanya loh.."],
+            ["kamu jahat 😭", "tapi aku masih pengen kamu ikut..."],
+          ];
+
+          if (refusalCount < responses.length) {
+            await appendMultiDialogue(responses[refusalCount]);
           } else {
             await appendDialogue("😔 yaudah deh, terakhir...");
             showQuestion(true);
             return;
           }
+
           refusalCount++;
         }
 
         showQuestion();
       }
 
-      async function appendUserResponse(choice) {
-        const text = choice === "y" ? "Iya" : "Tidak";
-        const entry = document.createElement("div");
-        entry.className = "dialogue-entry";
-        entry.textContent = `kamu : ${text}`;
-        dialogueContent.appendChild(entry);
-        autoScrollChat();
-        await delay(400);
-      }
-
       async function appendMultiDialogue(dialogues) {
         for (let i = 0; i < dialogues.length; i++) {
-          tapHint.style.display = i < dialogues.length - 1 ? "flex" : "none";
           await appendDialogue(dialogues[i]);
           if (i < dialogues.length - 1) {
+            tapHint.style.display = "flex";
             await waitForClickToContinue();
+            tapHint.style.display = "none";
           }
         }
-        tapHint.style.display = "none";
       }
 
       function waitForClickToContinue() {
@@ -415,7 +429,25 @@
         });
       }
 
-      window.onload = startDialogue;
+      async function typeWriterEffect() {
+        const text = title.textContent;
+        title.textContent = "";
+        for (let i = 0; i < text.length; i++) {
+          title.textContent += text.charAt(i);
+          await delay(60);
+        }
+      }
+
+      async function showTitleAndFade() {
+        title.classList.add("animated");
+        await typeWriterEffect();
+        await delay(1000);
+        overlay.style.backgroundColor = "rgba(0,0,0,0.3)";
+        await delay(2000);
+        dialogueBox.style.display = "flex";
+      }
+
+      startDialogue();
     </script>
   </body>
 </html>
